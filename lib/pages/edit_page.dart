@@ -12,31 +12,39 @@ class EditPage extends StatefulWidget {
 }
 
 class _EditPageState extends State<EditPage> {
+  // สร้าง GlobalKey สำหรับ Form เพื่อใช้ในการตรวจสอบและบันทึกข้อมูล
   final _formKey = GlobalKey<FormState>();
+  // สร้าง Controller สำหรับควบคุมข้อมูลใน TextField
   late TextEditingController nameController;
   late TextEditingController emailController;
+  // ตัวแปรสำหรับควบคุมสถานะการโหลดและการเปลี่ยนแปลงข้อมูล
   bool isLoading = false;
   bool _hasChanges = false;
 
   @override
   void initState() {
     super.initState();
+    // กำหนดค่าเริ่มต้นให้กับ Controller จากข้อมูลผู้ใช้ที่ได้รับ
     nameController = TextEditingController(text: widget.user['name']);
     emailController = TextEditingController(text: widget.user['email']);
 
+    // เพิ่ม listener เพื่อตรวจสอบการเปลี่ยนแปลงข้อมูล
     nameController.addListener(_onTextChanged);
     emailController.addListener(_onTextChanged);
   }
 
   @override
   void dispose() {
+    // ลบ listener เมื่อไม่ได้ใช้งานแล้ว
     nameController.removeListener(_onTextChanged);
     emailController.removeListener(_onTextChanged);
+    // ทำลาย Controller เพื่อป้องกันการรั่วไหลของหน่วยความจำ
     nameController.dispose();
     emailController.dispose();
     super.dispose();
   }
 
+  // ฟังก์ชันตรวจสอบการเปลี่ยนแปลงข้อมูล
   void _onTextChanged() {
     setState(() {
       _hasChanges = nameController.text != widget.user['name'] ||
@@ -44,8 +52,10 @@ class _EditPageState extends State<EditPage> {
     });
   }
 
+  // ฟังก์ชันสำหรับอัปเดตข้อมูลผู้ใช้
   Future<void> updateUser() async {
     if (_formKey.currentState!.validate()) {
+      // ตรวจสอบว่ามีการเปลี่ยนแปลงข้อมูลหรือไม่
       if (!_hasChanges) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -57,10 +67,11 @@ class _EditPageState extends State<EditPage> {
       }
 
       setState(() {
-        isLoading = true;
+        isLoading = true; // เริ่มแสดงสถานะกำลังโหลด
       });
 
       try {
+        // ส่งข้อมูลไปยัง API เพื่ออัปเดต
         final response = await http.post(
           Uri.parse('https://111111111111.itshuntra.net/api/update.php'),
           body: json.encode({
@@ -71,16 +82,18 @@ class _EditPageState extends State<EditPage> {
           headers: {"Content-Type": "application/json"},
         );
 
+        // ตรวจสอบการตอบกลับจาก API
         if (response.statusCode == 200) {
           final jsonResponse = json.decode(response.body);
           if (jsonResponse['status'] == 'success') {
+            // แสดงข้อความแจ้งเตือนเมื่ออัปเดตสำเร็จ
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('อัปเดตข้อมูลสำเร็จ'),
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.pop(context, true);
+            Navigator.pop(context, true); // ปิดหน้านี้และส่งค่า true กลับไป
           } else {
             throw Exception(jsonResponse['message']);
           }
@@ -88,6 +101,7 @@ class _EditPageState extends State<EditPage> {
           throw Exception('เกิดข้อผิดพลาดในการแก้ไขข้อมูล');
         }
       } catch (e) {
+        // แสดงข้อความแจ้งเตือนเมื่อเกิดข้อผิดพลาด
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('เกิดข้อผิดพลาด: ${e.toString()}'),
@@ -96,7 +110,7 @@ class _EditPageState extends State<EditPage> {
         );
       } finally {
         setState(() {
-          isLoading = false;
+          isLoading = false; // สิ้นสุดการแสดงสถานะกำลังโหลด
         });
       }
     }
@@ -123,6 +137,7 @@ class _EditPageState extends State<EditPage> {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
+                        // ช่องกรอกชื่อ
                         TextFormField(
                           controller: nameController,
                           decoration: InputDecoration(
@@ -130,6 +145,7 @@ class _EditPageState extends State<EditPage> {
                             prefixIcon: Icon(Icons.person),
                             border: OutlineInputBorder(),
                           ),
+                          // ตรวจสอบความถูกต้องของข้อมูล
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'กรุณากรอกชื่อ';
@@ -138,6 +154,7 @@ class _EditPageState extends State<EditPage> {
                           },
                         ),
                         SizedBox(height: 16),
+                        // ช่องกรอกอีเมล
                         TextFormField(
                           controller: emailController,
                           decoration: InputDecoration(
@@ -145,6 +162,7 @@ class _EditPageState extends State<EditPage> {
                             prefixIcon: Icon(Icons.email),
                             border: OutlineInputBorder(),
                           ),
+                          // ตรวจสอบความถูกต้องของอีเมล
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'กรุณากรอกอีเมล';
@@ -160,6 +178,7 @@ class _EditPageState extends State<EditPage> {
                   ),
                 ),
                 SizedBox(height: 24),
+                // ปุ่มบันทึกการแก้ไข
                 ElevatedButton(
                   onPressed: isLoading ? null : updateUser,
                   child: isLoading
@@ -173,6 +192,7 @@ class _EditPageState extends State<EditPage> {
                   )
                       : Text('บันทึกการแก้ไข'),
                   style: ElevatedButton.styleFrom(
+                    // เปลี่ยนสีปุ่มตามสถานะการเปลี่ยนแปลงข้อมูล
                     backgroundColor: _hasChanges ? Colors.blue : Colors.grey,
                     padding: EdgeInsets.symmetric(vertical: 12),
                     textStyle: TextStyle(fontSize: 18),

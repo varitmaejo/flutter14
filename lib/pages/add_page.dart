@@ -10,39 +10,48 @@ class AddPage extends StatefulWidget {
 }
 
 class _AddPageState extends State<AddPage> {
+  // สร้าง GlobalKey สำหรับ Form เพื่อใช้ในการตรวจสอบและบันทึกข้อมูล
   final _formKey = GlobalKey<FormState>();
+  // สร้าง Controller สำหรับควบคุมข้อมูลใน TextField
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  // ตัวแปรสำหรับควบคุมสถานะการโหลด
   bool _isLoading = false;
 
+  // ฟังก์ชันสำหรับเพิ่มข้อมูลผู้ใช้
   Future<void> _addUser() async {
+    // ตรวจสอบความถูกต้องของข้อมูลในฟอร์ม
     if (_formKey.currentState!.validate()) {
       setState(() {
-        _isLoading = true;
+        _isLoading = true; // เริ่มแสดงสถานะกำลังโหลด
       });
 
       try {
+        // เตรียมข้อมูลสำหรับส่งไปยัง API
         final data = {
           "name": _nameController.text.trim(),
           "email": _emailController.text.trim(),
         };
 
+        // ส่งข้อมูลไปยัง API
         final response = await http.post(
           Uri.parse('https://111111111111.itshuntra.net/api/insert.php'),
           headers: {"Content-Type": "application/json"},
           body: json.encode(data),
         );
 
+        // ตรวจสอบการตอบกลับจาก API
         if (response.statusCode == 200) {
           final jsonResponse = json.decode(response.body);
           if (jsonResponse['status'] == 'success') {
+            // แสดงข้อความแจ้งเตือนเมื่อเพิ่มข้อมูลสำเร็จ
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(jsonResponse['message']),
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.pop(context, true);
+            Navigator.pop(context, true); // ปิดหน้านี้และส่งค่า true กลับไป
           } else {
             throw Exception(jsonResponse['message']);
           }
@@ -50,6 +59,7 @@ class _AddPageState extends State<AddPage> {
           throw Exception('HTTP Error: ${response.statusCode}');
         }
       } catch (e) {
+        // แสดงข้อความแจ้งเตือนเมื่อเกิดข้อผิดพลาด
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('เกิดข้อผิดพลาด: ${e.toString()}'),
@@ -58,7 +68,7 @@ class _AddPageState extends State<AddPage> {
         );
       } finally {
         setState(() {
-          _isLoading = false;
+          _isLoading = false; // สิ้นสุดการแสดงสถานะกำลังโหลด
         });
       }
     }
@@ -85,6 +95,7 @@ class _AddPageState extends State<AddPage> {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
+                        // ช่องกรอกชื่อ
                         TextFormField(
                           controller: _nameController,
                           decoration: InputDecoration(
@@ -92,6 +103,7 @@ class _AddPageState extends State<AddPage> {
                             prefixIcon: Icon(Icons.person),
                             border: OutlineInputBorder(),
                           ),
+                          // ตรวจสอบความถูกต้องของข้อมูล
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'กรุณากรอกชื่อ';
@@ -100,6 +112,7 @@ class _AddPageState extends State<AddPage> {
                           },
                         ),
                         SizedBox(height: 16),
+                        // ช่องกรอกอีเมล
                         TextFormField(
                           controller: _emailController,
                           decoration: InputDecoration(
@@ -107,6 +120,7 @@ class _AddPageState extends State<AddPage> {
                             prefixIcon: Icon(Icons.email),
                             border: OutlineInputBorder(),
                           ),
+                          // ตรวจสอบความถูกต้องของอีเมล
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'กรุณากรอกอีเมล';
@@ -122,6 +136,7 @@ class _AddPageState extends State<AddPage> {
                   ),
                 ),
                 SizedBox(height: 24),
+                // ปุ่มเพิ่มข้อมูล
                 ElevatedButton(
                   onPressed: _isLoading ? null : _addUser,
                   child: _isLoading
